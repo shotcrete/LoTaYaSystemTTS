@@ -68,8 +68,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         pitchSeekBar.progress = (savedPitch * 100).toInt()
         pitchValueText.text = "အသံအနေအထား: ${savedPitch}x"
 
+        // 💡 ဤနေရာတွင် Modifier နေရာ၌ SeekBar ကို အမှန်ပြင်ဆင်ထားပါသည်
         pitchSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: Modifier?, progress: Int, fromUser: Boolean) {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val pitch = progress.toFloat() / 100.0f
                 pitchValueText.text = "အသံအနေအထား: ${pitch}x"
                 sharedPref.edit().putFloat("custom_pitch", pitch).apply()
