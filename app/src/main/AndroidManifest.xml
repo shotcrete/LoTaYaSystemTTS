@@ -4,21 +4,23 @@
     <application
         android:allowBackup="true"
         android:label="လိုတရ TTS"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
         android:supportsRtl="true">
 
-        <!-- ကျွန်တော်တို့ဆောက်ထားသည့် ကိုယ်ပိုင် System TTS Service -->
+        <!-- စနစ်သုံး ကိုယ်ပိုင် TTS Service -->
         <service
             android:name=".MyTTSService"
             android:label="လိုတရ မြန်မာ TTS Engine"
             android:permission="android.permission.BIND_TEXT_TO_SPEECH"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:priority="100">
                 <action android:name="android.intent.action.TTS_SERVICE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
 
-        <!-- App ကိုဖွင့်ပြီး UI ချိန်ညှိမည့် မျက်နှာပြင် (MainActivity) -->
+        <!-- App UI ချိန်ညှိမည့် မျက်နှာပြင် -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
