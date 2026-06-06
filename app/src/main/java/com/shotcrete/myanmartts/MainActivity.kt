@@ -36,7 +36,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var ortSessionMm: OrtSession? = null
     private var progressDialog: ProgressDialog? = null
     
-    private var lastAudioFilePath: String? = null
     private var mediaPlayer: MediaPlayer? = null
     private var googleTts: TextToSpeech? = null
     private var isGoogleTtsReady = false
@@ -60,11 +59,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val inputText = findViewById<EditText>(R.id.inputText)
         val speakButton = findViewById<Button>(R.id.speakButton)
-        val playLastButton = findViewById<Button>(R.id.playLastButton)
         val pitchSeekBar = findViewById<SeekBar>(R.id.pitchSeekBar)
         val pitchValueText = findViewById<TextView>(R.id.pitchValueText)
         
-        // --- Pitch Settings ကို UI ပေါ်တွင် ချိတ်ဆက်မောင်းနှင်ခြင်း ---
         val sharedPref = getSharedPreferences("LoTaYaSettings", Context.MODE_PRIVATE)
         val savedPitch = sharedPref.getFloat("custom_pitch", 1.0f)
         pitchSeekBar.max = 200
@@ -72,7 +69,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         pitchValueText.text = "အသံအနေအထား: ${savedPitch}x"
 
         pitchSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            override fun onProgressChanged(seekBar: Modifier?, progress: Int, fromUser: Boolean) {
                 val pitch = progress.toFloat() / 100.0f
                 pitchValueText.text = "အသံအနေအထား: ${pitch}x"
                 sharedPref.edit().putFloat("custom_pitch", pitch).apply()
