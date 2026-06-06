@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="Myanmar TTS"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:label="လိုတရ TTS"
+        android:supportsRtl="true">
+
+        <!-- ကျွန်တော်တို့ဆောက်ထားသည့် ကိုယ်ပိုင် System TTS Service -->
+        <service
+            android:name=".MyTTSService"
+            android:label="လိုတရ မြန်မာ TTS Engine"
+            android:permission="android.permission.BIND_TEXT_TO_SPEECH"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.TTS_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
+        <!-- App ကိုဖွင့်ပြီး UI ချိန်ညှိမည့် မျက်နှာပြင် (MainActivity) -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -15,5 +27,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 </manifest>
