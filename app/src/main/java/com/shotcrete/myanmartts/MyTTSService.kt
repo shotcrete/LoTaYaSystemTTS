@@ -1,4 +1,4 @@
-package com.shotcrete.myanmartts
+package com.shotcrete.lotayatts
 
 import android.content.Context
 import android.media.AudioFormat
