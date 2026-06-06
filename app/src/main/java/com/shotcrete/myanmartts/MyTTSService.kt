@@ -73,16 +73,18 @@ class MyTTSService : TextToSpeechService(), TextToSpeech.OnInitListener {
 
     // --- Android System TTS အသိအမှတ်ပြုစေမည့် Engine ချိန်ညှိချက်များ ---
     override fun onIsLanguageAvailable(lang: String?, country: String?, variant: String?): Int {
-        if (lang == "mya" || lang == "eng" || lang == "bur") {
+        // "my" နှင့် "en" (၂ လုံးကုဒ်များ) ကိုပါ ထပ်ဖြည့်ပေးလိုက်ခြင်း
+        if (lang == "my" || lang == "mya" || lang == "en" || lang == "eng" || lang == "bur") {
             return TextToSpeech.LANG_COUNTRY_AVAILABLE
         }
         return TextToSpeech.LANG_NOT_SUPPORTED
     }
 
     override fun onGetLanguage(): Array<String> {
-        return arrayOf("mya", "MMR", "")
+        // "mya", "MMR" နေရာတွင် ပို၍ Standard ကျသော "my", "MM" သို့ ပြောင်းခြင်း
+        return arrayOf("my", "MM", "")
     }
-
+    
     override fun onLoadLanguage(lang: String?, country: String?, variant: String?): Int {
         return onIsLanguageAvailable(lang, country, variant)
     }
