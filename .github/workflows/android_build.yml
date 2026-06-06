@@ -2,9 +2,11 @@ name: Android APK Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -14,50 +16,63 @@ jobs:
       contents: write
 
     steps:
-    # ၁။ ကုဒ်များကို ဆွဲယူခြင်း (Git Checkout)
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-      with:
-        lfs: true
+      # Checkout
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    # ၂။ 🚀 [Deep Clean] အင်္ဂလိပ်မော်ဒယ်ဖိုင်ကြီး (.onnx ရော .json ရော) ကို အတင်းဆွဲဖျက်ပြီး Gradle ကို ရှင်းထုတ်ခြင်း
-    - name: Delete English Model and Clean
-      run: |
-        rm -f app/src/main/assets/en_model.onnx
-        rm -f app/src/main/assets/en_model.onnx.json
-        ./gradlew clean
+      # JDK 17
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
 
-    # ၃။ Java System (JDK 17) ကို ပြင်ဆင်ခြင်းနှင့် ပိုမြန်အောင် Cache လုပ်ခြင်း
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      # Gradle Permission
+      - name: Grant execute permission
+        run: chmod +x gradlew
 
-    # ၄။ APK ကို စတင် Build လုပ်ခြင်း
-    - name: Build with Gradle
-      run: bash ./gradlew assembleDebug
+      # Download ONNX Model
+      - name: Download ONNX Model
+        run: |
+          mkdir -p app/src/main/assets
+          curl -L \
+            -o app/src/main/assets/model.onnx \
+            https://github.com/shotcrete/myanmartts-app/raw/main/app/src/main/assets/model.onnx
 
-    # ၅။ ထွက်လာတဲ့ APK ကို Private/Prerelease အဖြစ် GitHub Release ထဲ တင်ပေးခြင်း
-    - name: Create Prerelease & Upload APK
-      id: create_release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: build-${{ github.run_number }}
-        name: Build #${{ github.run_number }}
-        draft: false
-        prerelease: true
-        files: app/build/outputs/apk/debug/app-debug.apk
+      # Delete English Model
+      - name: Remove English Model
+        run: |
+          rm -f app/src/main/assets/en_model.onnx
+          rm -f app/src/main/assets/en_model.onnx.json
 
-    # ၆။ GoSpeed ထဲ ထည့်ဒေါင်းနိုင်ဖို့ Telegram ဆီ Direct Link လှမ်းပို့ပေးခြင်း
-    - name: Send Direct Link to Telegram
-      uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: |
-          🎉 Android Build အောင်မြင်သွားပါပြီ!
-          
-          📦 GoSpeed ထဲ ထည့်ဒေါင်းလို့ရမယ့် မြန်နှုန်းမြင့် Direct Download Link:
-          https://github.com/${{ github.repository }}/releases/download/build-${{ github.run_number }}/app-debug.apk
+      # Clean
+      - name: Clean Project
+        run: ./gradlew clean
+
+      # Build APK
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      # Release
+      - name: Upload APK Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build #${{ github.run_number }}
+          prerelease: true
+          files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Telegram
+      - name: Send Telegram Notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ✅ Build Success
+
+            APK:
+            https://github.com/${{ github.repository }}/releases/download/build-${{ github.run_number }}/app-debug.apk
