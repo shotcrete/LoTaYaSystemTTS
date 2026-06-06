@@ -1,30 +1,67 @@
-<LinearLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="20dp"
-    android:gravity="center">
+    android:padding="20dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="လိုတရ TTS - လေသံညှိရန် (Pitch Control)"
-        android:textSize="18sp"
+        android:text="လိုတရ မြန်မာ-အင်္ဂလိပ် TTS Engine"
+        android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_marginBottom="30dp"/>
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- ၁။ စာသားရိုက်ရန်နေရာ (Input Text) -->
+    <EditText
+        android:id="@+id/inputText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="ဒီမှာ စာရိုက်ပါ..."
+        android:minLines="3"
+        android:gravity="top"
+        android:layout_marginBottom="20dp"/>
+
+    <hr/>
+
+    <!-- ၂။ လေသံညှိရန်နေရာ (Pitch Control - အသစ်) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="လေသံညှိရန် (Pitch Control):"
+        android:textStyle="bold"
+        android:layout_marginBottom="5dp"/>
 
     <SeekBar
         android:id="@+id/pitchSeekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:max="200"
-        android:progress="100" /> <TextView
+        android:progress="100"
+        android:layout_marginBottom="5dp"/>
+
+    <TextView
         android:id="@+id/pitchValueText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="အသံအနေအထား: 1.0x (ပုံမှန်)"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginBottom="30dp"/>
+
+    <!-- ၃။ အသံထွက်ခိုင်းမည့် ခလုတ် (Speak Button) -->
+    <Button
+        android:id="@+id/speakButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="အသံထွက်ဖတ်ခိုင်းမည်"
+        android:layout_marginBottom="10dp"/>
+
+    <!-- ၄။ နောက်ဆုံးထွက်ထားသော အသံကို ပြန်ဖွင့်မည့် ခလုတ် (Play Last Button) -->
+    <Button
+        android:id="@+id/playLastButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="နောက်ဆုံးထွက်ထားသော အသံကိုပြန်ဖွင့်မည်"/>
 
 </LinearLayout>
-
