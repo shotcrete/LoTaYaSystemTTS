@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.shotcrete.lotayatts"> <!-- အစ်ကို့ရဲ့ Package Name ကို သေချာစေရန် ဤနေရာတွင် ထည့်ပေးထားပါသည် -->
+
+    <!-- အဆင့် (၁) - Android 11 နောက်ပိုင်းအတွက် Google TTS ကို လှမ်းမြင်နိုင်ပြီး ချိတ်ဆက်နိုင်အောင် ကြေညာခြင်း -->
+    <queries>
+        <package android:name="com.google.android.tts" />
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -9,10 +15,11 @@
         android:supportsRtl="true">
 
         <!-- စနစ်သုံး ကိုယ်ပိုင် TTS Service -->
+        <!-- အဆင့် (၂) - android:permission="android.permission.BIND_TEXT_TO_SPEECH" ကို ဖြုတ်ပစ်ထားပါသည် -->
+        <!-- သို့မှသာ အခြားစာဖတ်အက်ပ်များက လုံခြုံရေးအပိတ်မခံရဘဲ တိုက်ရိုက် လှမ်းချိတ်နိုင်မည်ဖြစ်သည် -->
         <service
             android:name=".MyTTSService"
             android:label="လိုတရ မြန်မာ TTS Engine"
-            android:permission="android.permission.BIND_TEXT_TO_SPEECH"
             android:exported="true">
             <intent-filter android:priority="100">
                 <action android:name="android.intent.action.TTS_SERVICE" />
@@ -32,3 +39,4 @@
 
     </application>
 </manifest>
+
