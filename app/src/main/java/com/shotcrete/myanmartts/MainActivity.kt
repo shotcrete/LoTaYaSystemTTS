@@ -1,20 +1,19 @@
 package com.shotcrete.lotayatts
 
+import android.content.Context
 import android.app.ProgressDialog
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.media.MediaPlayer
-import android.media.MediaCodec
-import android.media.MediaCodecInfo
-import android.media.MediaFormat
-import android.media.MediaMuxer
 import android.os.Bundle
 import android.os.Environment
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.widget.Button
 import android.widget.EditText
+import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import ai.onnxruntime.OrtEnvironment
@@ -42,7 +41,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var googleTts: TextToSpeech? = null
     private var isGoogleTtsReady = false
 
-    // မြန်မာ Vocab Map
     private val vocabMapMm = mapOf(
         '်' to 0L, 'ာ' to 1L, 'ု' to 2L, 'ိ' to 3L, 'း' to 4L, 'ေ' to 5L, 'သ' to 6L, 'က' to 7L,
         'င' to 8L, 'တ' to 9L, '့' to 10L, 'မ' to 11L, 'ြ' to 12L, 'ည' to 13L, 'ရ' to 14L, 'အ' to 15L,
@@ -58,12 +56,30 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Google TextToSpeech ကို Initialize လုပ်ခြင်း
         googleTts = TextToSpeech(this, this)
 
         val inputText = findViewById<EditText>(R.id.inputText)
         val speakButton = findViewById<Button>(R.id.speakButton)
         val playLastButton = findViewById<Button>(R.id.playLastButton)
+        val pitchSeekBar = findViewById<SeekBar>(R.id.pitchSeekBar)
+        val pitchValueText = findViewById<TextView>(R.id.pitchValueText)
+        
+        // --- Pitch Settings ကို UI ပေါ်တွင် ချိတ်ဆက်မောင်းနှင်ခြင်း ---
+        val sharedPref = getSharedPreferences("LoTaYaSettings", Context.MODE_PRIVATE)
+        val savedPitch = sharedPref.getFloat("custom_pitch", 1.0f)
+        pitchSeekBar.max = 200
+        pitchSeekBar.progress = (savedPitch * 100).toInt()
+        pitchValueText.text = "အသံအနေအထား: ${savedPitch}x"
+
+        pitchSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val pitch = progress.toFloat() / 100.0f
+                pitchValueText.text = "အသံအနေအထား: ${pitch}x"
+                sharedPref.edit().putFloat("custom_pitch", pitch).apply()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
 
         progressDialog = ProgressDialog(this).apply {
             setMessage("အသံဖိုင်ပြောင်းလဲနေပါသည်... ခဏစောင့်ပါ...")
@@ -73,8 +89,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         thread(start = true) {
             try {
                 ortEnv = OrtEnvironment.getEnvironment()
-                
-                // 🇲🇲 မြန်မာမော်ဒယ် တစ်ခုတည်းကိုသာ စနစ်တကျ ဆွဲဖွင့်တော့မည်ဖြစ်သည်
                 val modelFileMm = File(cacheDir, "model.onnx")
                 if (!modelFileMm.exists() || modelFileMm.length() < 10_000_000) {
                     if (modelFileMm.exists()) modelFileMm.delete()
@@ -108,6 +122,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     try {
                         val textSegments = splitByLanguage(rawText)
                         val combinedAudioList = mutableListOf<FloatArray>()
+                        val currentPitch = sharedPref.getFloat("custom_pitch", 1.0f)
 
                         for (segment in textSegments) {
                             if (segment.isEnglish) {
@@ -118,7 +133,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                                     }
                                 }
                             } else {
-                                runMyanmarPipeline(segment.text, env, combinedAudioList)
+                                runMyanmarPipeline(segment.text, env, combinedAudioList, currentPitch)
                             }
                         }
 
@@ -148,23 +163,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         }
 
                         val sampleRate = 16000
-                        val baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-                        val myanmarTtsDir = File(baseDir, "MyanmarTTS")
-                        if (!myanmarTtsDir.exists()) myanmarTtsDir.mkdirs()
-
-                        val tempPcmFile = File(cacheDir, "temp.pcm")
-                        saveFloatsToPcm16(tempPcmFile, finalAudioFloats)
-
-                        val outputAacFile = File(myanmarTtsDir, "HYBRID_TTS_${System.currentTimeMillis()}.m4a")
-                        convertPcmToAacMuxer(tempPcmFile, outputAacFile, sampleRate)
-                        tempPcmFile.delete()
-
-                        lastAudioFilePath = outputAacFile.absolutePath
-
-                        runOnUiThread {
-                            progressDialog?.dismiss()
-                            Toast.makeText(this@MainActivity, "Hybrid အသံဖိုင် သိမ်းဆည်းပြီးပါပြီဗျာ", Toast.LENGTH_LONG).show()
-                        }
+                        runOnUiThread { progressDialog?.dismiss() }
 
                         val bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT)
                         val audioTrack = AudioTrack(
@@ -188,22 +187,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 }
             } else {
                 Toast.makeText(this, "စာသား အရင်ရိုက်ပေးပါ", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        playLastButton.setOnClickListener {
-            val path = lastAudioFilePath
-            if (path != null && File(path).exists()) {
-                try {
-                    mediaPlayer?.release()
-                    mediaPlayer = MediaPlayer().apply {
-                        setDataSource(path)
-                        prepare()
-                        start()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
             }
         }
     }
@@ -234,9 +217,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         try {
             latch.await(10, TimeUnit.SECONDS)
             if (tempWaveFile.exists() && tempWaveFile.length() > 44) {
-                val fis = FileInputStream(tempWaveFile)
                 val bytes = tempWaveFile.readBytes()
-                fis.close()
                 tempWaveFile.delete()
 
                 val pcmByteSize = bytes.size - 44
@@ -249,7 +230,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         floatArray[i] = buffer.short / 32768.0f
                     }
                 }
-                
                 return downsampleTo16k(floatArray, 24000)
             }
         } catch (e: Exception) {
@@ -272,7 +252,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         return output
     }
 
-    private fun runMyanmarPipeline(text: String, env: OrtEnvironment, combinedAudioList: MutableList<FloatArray>) {
+    private fun runMyanmarPipeline(text: String, env: OrtEnvironment, combinedAudioList: MutableList<FloatArray>, pitch: Float) {
         var processedText = preProcessMyanmarText(text)
         processedText = normalizeNumbers(processedText)
 
@@ -298,14 +278,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         
         val inputTensor = OnnxTensor.createTensor(env, java.nio.LongBuffer.wrap(inputSequence), inputShape)
         val lengthTensor = OnnxTensor.createTensor(env, java.nio.LongBuffer.wrap(longArrayOf(inputSequence.size.toLong())), singleShape)
-        val scalesTensor = OnnxTensor.createTensor(env, java.nio.FloatBuffer.wrap(floatArrayOf(0.667f, 1.0f, 0.8f)), longArrayOf(3))
+        val scalesTensor = OnnxTensor.createTensor(env, java.nio.FloatBuffer.wrap(floatArrayOf(0.667f, 1.0f, 0.8f * pitch)), longArrayOf(3))
         
         val attentionMaskSequence = LongArray(inputSequence.size) { 1L }
         val maskTensor = OnnxTensor.createTensor(env, java.nio.LongBuffer.wrap(attentionMaskSequence), inputShape)
         val sidTensor = OnnxTensor.createTensor(env, java.nio.LongBuffer.wrap(longArrayOf(0L)), singleShape)
 
         val inputMap = HashMap<String, OnnxTensor>()
-        
         ortSessionMm?.inputNames?.forEach { name ->
             val lowerName = name.lowercase()
             when {
@@ -338,7 +317,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun splitByLanguage(text: String): List<LangSegment> {
         val segments = mutableListOf<LangSegment>()
         if (text.isEmpty()) return segments
-
         var currentSegment = StringBuilder()
         var currentIsEnglish: Boolean? = null
 
@@ -408,95 +386,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 outputStream.flush()
             }
         }
-    }
-
-    private fun saveFloatsToPcm16(file: File, floatData: FloatArray) {
-        val fos = FileOutputStream(file)
-        val byteBuffer = ByteBuffer.allocate(floatData.size * 2).order(ByteOrder.LITTLE_ENDIAN)
-        for (f in floatData) {
-            var s = (f * 32767.0f).toInt()
-            if (s > 32767) s = 32767
-            if (s < -32768) s = -32768
-            byteBuffer.putShort(s.toShort())
-        }
-        fos.write(byteBuffer.array())
-        fos.close()
-    }
-
-    private fun convertPcmToAacMuxer(pcmFile: File, aacFile: File, sampleRate: Int) {
-        val fis = FileInputStream(pcmFile)
-        val muxer = MediaMuxer(aacFile.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-        val codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC)
-        val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, 1).apply {
-            setInteger(MediaFormat.KEY_BIT_RATE, 64000)
-            setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
-            setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 1024 * 10)
-        }
-        codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-        codec.start()
-
-        val bufferInfo = MediaCodec.BufferInfo()
-        var audioTrackIndex = -1
-        var isMuxerStarted = false
-        val rawBuffer = ByteArray(4 * 1024)
-        var hasMoreData = true
-        var isEOS = false
-        var presentationTimeUs = 0L
-
-        while (!isEOS) {
-            if (hasMoreData) {
-                val inputBufferIndex = codec.dequeueInputBuffer(10000)
-                if (inputBufferIndex >= 0) {
-                    val inputBuffer = codec.getInputBuffer(inputBufferIndex)!!
-                    inputBuffer.clear()
-                    val bytesRead = fis.read(rawBuffer)
-                    if (bytesRead == -1) {
-                        hasMoreData = false
-                        codec.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                    } else {
-                        inputBuffer.put(rawBuffer, 0, bytesRead)
-                        codec.queueInputBuffer(inputBufferIndex, 0, bytesRead, presentationTimeUs, 0)
-                        presentationTimeUs += (bytesRead / 2) * 1000000L / sampleRate.toLong()
-                    }
-                }
-            }
-
-            var outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 10000)
-            if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                if (!isMuxerStarted) {
-                    audioTrackIndex = muxer.addTrack(codec.outputFormat)
-                    muxer.start()
-                    isMuxerStarted = true
-                }
-                outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 0)
-            }
-
-            while (outputBufferIndex >= 0) {
-                if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) isEOS = true
-                val outputBuffer = codec.getOutputBuffer(outputBufferIndex)!!
-                
-                if (bufferInfo.size > 0 && (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0)) {
-                    if (!isMuxerStarted) {
-                        audioTrackIndex = muxer.addTrack(codec.outputFormat)
-                        muxer.start()
-                        isMuxerStarted = true
-                    }
-                    outputBuffer.position(bufferInfo.offset)
-                    outputBuffer.limit(bufferInfo.offset + bufferInfo.size)
-                    muxer.writeSampleData(audioTrackIndex, outputBuffer, bufferInfo)
-                }
-                
-                codec.releaseOutputBuffer(outputBufferIndex, false)
-                outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 0)
-            }
-        }
-        codec.stop()
-        codec.release()
-        if (isMuxerStarted) {
-            try { muxer.stop() } catch (e: Exception) { e.printStackTrace() }
-        }
-        muxer.release()
-        fis.close()
     }
 
     override fun onDestroy() {
