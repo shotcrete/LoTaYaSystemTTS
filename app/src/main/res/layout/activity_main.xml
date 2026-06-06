@@ -1,36 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="20dp"
+    android:gravity="center">
 
-    <EditText
-        android:id="@+id/inputText"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="top"
-        android:hint="အသံပြောင်းလိုသော မြန်မာစာသားများကို ဤနေရာတွင် Paste ချပါ..."
-        android:inputType="textMultiLine"
-        android:scrollbars="vertical"
-        android:background="@android:drawable/editbox_background"
-        android:padding="12dp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="လိုတရ TTS - လေသံညှိရန် (Pitch Control)"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="30dp"/>
 
-    <Button
-        android:id="@+id/speakButton"
+    <SeekBar
+        android:id="@+id/pitchSeekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="မြန်မာအသံပြောင်းမည်"
-        android:textSize="16sp" />
-
-    <Button
-        android:id="@+id/playLastButton"
-        android:layout_width="match_parent"
+        android:max="200"
+        android:progress="100" /> <TextView
+        android:id="@+id/pitchValueText"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="နောက်ဆုံးဖိုင် ပြန်ဖွင့်မည်"
-        android:textSize="16sp"
-        android:backgroundTint="#4CAF50" />
+        android:text="အသံအနေအထား: 1.0x (ပုံမှန်)"
+        android:layout_marginTop="10dp"/>
+
 </LinearLayout>
+
