@@ -1,4 +1,4 @@
-package com.shotcrete.myanmartts
+package com.shotcrete.lotayatts
 
 import android.app.ProgressDialog
 import android.media.AudioFormat
